@@ -2,7 +2,9 @@ package com.example.zhouge.opencv;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
@@ -16,11 +18,14 @@ import org.opencv.android.JavaCameraView;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 
+import java.io.FileNotFoundException;
+
 public class MainActivity extends opencvActivity implements CameraBridgeViewBase.CvCameraViewListener2,View.OnClickListener{
 
     public native String stringFromJNI();
     public static native Bitmap getGrayImage(Bitmap bitmap);
     Mat camera_mat;
+
 
     private JavaCameraView   javaCameraView;
 
@@ -73,8 +78,9 @@ public class MainActivity extends opencvActivity implements CameraBridgeViewBase
 
         camera_mat=inputFrame.rgba();
         //Core.rotate(camera_mat,camera_mat,Core.ROTATE_90_CLOCKWISE);
-        return camera_mat;
+        return inputFrame.rgba();
     }
+
 
     @Override
     public void onClick(View view) {
@@ -82,18 +88,23 @@ public class MainActivity extends opencvActivity implements CameraBridgeViewBase
         {
             case R.id.button_camera:{
 
-                Intent intent=new Intent(this,screenShotActivity.class);
-                MatSerializable m=new MatSerializable();
-                camera_mat.copyTo(m);
-                intent.putExtra("matImage",m);
-                if(m==null)
-                    Toast.makeText(this,"data null",Toast.LENGTH_LONG).show();
-                else {
-                    Toast.makeText(this,"茄子！！！",Toast.LENGTH_LONG).show();
+                Intent intent=new Intent(this,CropImage_Activity.class);
+
+                mat_clon=camera_mat.clone();
+                camera_mat.release();
+                Core.rotate(mat_clon,mat_clon,Core.ROTATE_90_CLOCKWISE);
+                long addr=mat_clon.nativeObj;
+                if(addr!=0){
+                    intent.putExtra("mat_addr",addr);
                     startActivity(intent);
+                }else
+                {
+                    Toast.makeText(this,"data_error",Toast.LENGTH_LONG).show();
                 }
             }
 
         }
     }
+
+
 }

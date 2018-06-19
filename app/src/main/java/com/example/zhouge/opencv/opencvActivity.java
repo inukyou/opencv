@@ -10,11 +10,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.WindowManager;
 
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Mat;
 
 
 public class opencvActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST_CODE=0;
+
+    protected static Mat mat_clon;
 
 
     private static boolean hasInit=false;
