@@ -2,6 +2,7 @@ package com.example.zhouge.opencv;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Environment;
 import android.util.Log;
 
@@ -12,6 +13,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import static com.googlecode.tesseract.android.TessBaseAPI.OEM_DEFAULT;
 
 public class Ocr {
 
@@ -33,7 +36,7 @@ public class Ocr {
         this.activity=activity;
         copyToSD(LANGUAGE_PATH, DEFAULT_LANGUAGE_NAME);
         tessBaseAPI=new TessBaseAPI();
-        tessBaseAPI.init(DATAPATH, DEFAULT_LANGUAGE);
+        tessBaseAPI.init(DATAPATH, DEFAULT_LANGUAGE,OEM_DEFAULT);
     }
 
 
@@ -88,6 +91,9 @@ public class Ocr {
             }
         }
     }
+
+
+
 
 
 }

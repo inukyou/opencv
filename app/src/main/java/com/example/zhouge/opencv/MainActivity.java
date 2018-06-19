@@ -93,7 +93,7 @@ public class MainActivity extends opencvActivity implements CameraBridgeViewBase
                 mat_clon=camera_mat.clone();
                 camera_mat.release();
                 long addr=mat_clon.nativeObj;
-                if(addr!=0){
+                if(addr!=0&&mat_clon.width()>0&&mat_clon.height()>0){
                     intent.putExtra("mat_addr",addr);
                     startActivity(intent);
                 }else
