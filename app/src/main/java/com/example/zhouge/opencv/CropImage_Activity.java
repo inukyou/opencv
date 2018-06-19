@@ -43,12 +43,12 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
 
     private static native void getGrayImage(long inMatAddr,long outMatAddr);
 
-    Mat mat;
     CropImageView cropImageView;
     Button button_crop,button_cannel;
     Bitmap cropBitMap;
     Dialog dia;
     TextView textView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,12 +63,10 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
         button_cannel.setOnClickListener(this);
 
 
-        mat=staticMat.clone();
-        getGrayImage(mat.nativeObj,mat.nativeObj);
-        Bitmap bitmap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(mat,bitmap);
-        mat.release();
-        cropImageView.setDrawable(bitmap,bitmap.getWidth(),bitmap.getHeight());
+        Mat color_mat=staticMat.clone();
+        Bitmap colorBitmap=Bitmap.createBitmap(color_mat.width(),color_mat.height(),Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(color_mat,colorBitmap);
+        cropImageView.setDrawable(colorBitmap,colorBitmap.getWidth(),colorBitmap.getHeight());
 
 
 
@@ -83,12 +81,14 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
         switch (view.getId())
         {
             case R.id.crop_button:{
-                cropBitMap=cropImageView.getCropImage();
-                Mat m=new Mat();
-                Utils.bitmapToMat(cropBitMap,mat);
-                getGrayImage(mat.nativeObj,mat.nativeObj);
-                Bitmap grayBitMap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(mat,grayBitMap);
+                cropImageView.getCropImage();
+
+                Mat gray_mat=new Mat();
+                Mat crop_mat=new Mat();
+                Utils.bitmapToMat(cropImageView.getCropImage(),crop_mat);
+                getGrayImage(crop_mat.nativeObj,gray_mat.nativeObj);
+                Bitmap grayBitMap=Bitmap.createBitmap(gray_mat.width(),gray_mat.height(),Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(gray_mat,grayBitMap);
 
                 dia = new Dialog(this, R.style.edit_AlertDialog_style);
                 ImageView imageView=new ImageView(this);
