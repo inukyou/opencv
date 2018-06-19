@@ -50,7 +50,7 @@ public class MainActivity extends opencvActivity implements CameraBridgeViewBase
         button_Camera.setOnClickListener(this);
 
         javaCameraView=(JavaCameraView)findViewById(R.id.camera_view);
-        javaCameraView.setActivity(this);
+        //javaCameraView.setActivity(this);
         javaCameraView.setCvCameraViewListener(this);
         javaCameraView.setVisibility(SurfaceView.VISIBLE);
         javaCameraView.setCameraIndex(0);
