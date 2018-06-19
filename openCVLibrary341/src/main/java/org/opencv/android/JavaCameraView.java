@@ -197,7 +197,7 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
                     mBuffer = new byte[size];
 
                     mCamera.addCallbackBuffer(mBuffer);
-                    mCamera.setDisplayOrientation(90);
+                    //mCamera.setDisplayOrientation(90);
                     mCamera.setPreviewCallbackWithBuffer(this);
 
                     mFrameChain = new Mat[2];
@@ -210,12 +210,12 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
                     mCameraFrame[0] = new JavaCameraFrame(mFrameChain[0], mFrameWidth, mFrameHeight);
                     mCameraFrame[1] = new JavaCameraFrame(mFrameChain[1], mFrameWidth, mFrameHeight);
 
-                    /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                         mSurfaceTexture = new SurfaceTexture(MAGIC_TEXTURE_ID);
                         mCamera.setPreviewTexture(mSurfaceTexture);
                     } else
-                       mCamera.setPreviewDisplay(null);*/
-                    mCamera.setPreviewDisplay(getHolder());
+                       mCamera.setPreviewDisplay(null);
+                    //mCamera.setPreviewDisplay(getHolder());
 
 
 

@@ -12,8 +12,12 @@ import android.widget.Toast;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 public class CropImage_Activity extends opencvActivity implements View.OnClickListener {
+
+
+    private static native void getGrayImage(long inMatAddr,long outMatAddr);
 
     Mat mat;
     CropImageView cropImageView;
@@ -54,14 +58,21 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
         {
             case R.id.crop_button:{
                 cropBitMap=cropImageView.getCropImage();
+                Mat m=new Mat();
+                Utils.bitmapToMat(cropBitMap,mat);
+                getGrayImage(mat.nativeObj,mat.nativeObj);
+                Bitmap grayBitMap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(mat,grayBitMap);
+
                 dia = new Dialog(this, R.style.edit_AlertDialog_style);
                 ImageView imageView=new ImageView(this);
-                imageView.setImageBitmap(cropBitMap);
+                imageView.setImageBitmap(grayBitMap);
                 dia.setCanceledOnTouchOutside(true);
                 dia.setContentView(imageView);
                 dia.show();
                 Ocr ocr=new Ocr(this);
-                final String s=ocr.Recognite(cropBitMap);
+
+                final String s=ocr.Recognite(grayBitMap);
                 Toast.makeText(this,s,Toast.LENGTH_LONG).show();
                 textView.setText(s);
                 break;

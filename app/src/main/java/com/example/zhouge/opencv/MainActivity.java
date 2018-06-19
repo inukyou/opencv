@@ -23,7 +23,7 @@ import java.io.FileNotFoundException;
 public class MainActivity extends opencvActivity implements CameraBridgeViewBase.CvCameraViewListener2,View.OnClickListener{
 
     public native String stringFromJNI();
-    public static native Bitmap getGrayImage(Bitmap bitmap);
+    private static native void getGrayImage(long inMatAddr,long outMatAddr);
     Mat camera_mat;
 
 
@@ -77,8 +77,8 @@ public class MainActivity extends opencvActivity implements CameraBridgeViewBase
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
         camera_mat=inputFrame.rgba();
-        //Core.rotate(camera_mat,camera_mat,Core.ROTATE_90_CLOCKWISE);
-        return inputFrame.rgba();
+        Core.rotate(camera_mat,camera_mat,Core.ROTATE_90_CLOCKWISE);
+        return camera_mat;
     }
 
 
@@ -92,7 +92,6 @@ public class MainActivity extends opencvActivity implements CameraBridgeViewBase
 
                 mat_clon=camera_mat.clone();
                 camera_mat.release();
-                Core.rotate(mat_clon,mat_clon,Core.ROTATE_90_CLOCKWISE);
                 long addr=mat_clon.nativeObj;
                 if(addr!=0){
                     intent.putExtra("mat_addr",addr);

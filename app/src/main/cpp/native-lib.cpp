@@ -7,7 +7,8 @@
 using namespace cv;
 
 
-jobject mat_to_bitmap(JNIEnv * env, Mat & src, bool needPremultiplyAlpha, jobject bitmap_config);
+//jobject mat_to_bitmap(JNIEnv * env, Mat & src, bool needPremultiplyAlpha, jobject bitmap_config);
+jobject GrayImag(JNIEnv *env, jclass type,jobject bmpObj);
 
 extern "C" JNIEXPORT jstring
 
@@ -18,33 +19,19 @@ Java_com_example_zhouge_opencv_MainActivity_stringFromJNI(
     std::string hello = "Hello from C++";
     return env->NewStringUTF(hello.c_str());
 }
+
+
+
 extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_example_zhouge_opencv_MainActivity_getGrayImage(JNIEnv *env, jclass type,jobject bmpObj) {
-
-    AndroidBitmapInfo bmpInfo={0};
-    if(AndroidBitmap_getInfo(env,bmpObj,&bmpInfo)<0)
-        return nullptr;
-    void* pixels =NULL;
-    if(AndroidBitmap_lockPixels(env,bmpObj,&pixels)<0)
-        return nullptr;
-    Mat m(bmpInfo.height,bmpInfo.width,CV_8UC4,pixels);
-
-    Mat dst;
-    cvtColor(m,dst,COLOR_BGR2GRAY);
-    jclass java_bitmap_class = (jclass)env->FindClass("android/graphics/Bitmap");
-    jmethodID mid = env->GetMethodID(java_bitmap_class, "getConfig", "()Landroid/graphics/Bitmap$Config;");
-    jobject bitmap_config = env->CallObjectMethod(bmpObj, mid);
-    jobject _bitmap = mat_to_bitmap(env,dst,false,bitmap_config);
-
-    AndroidBitmap_unlockPixels(env,bmpObj);
-    return _bitmap;
-
-    // TODO
-
+JNIEXPORT void JNICALL
+Java_com_example_zhouge_opencv_MainActivity_getGrayImage(JNIEnv *env, jclass type,jlong inMatAddr,jlong outMatAddr) {
+    Mat *inMat=(Mat *)inMatAddr;
+    Mat *outMat=(Mat *)outMatAddr;
+    cvtColor(*inMat,*outMat,COLOR_BGR2GRAY);
+    return;
 }
 
-
+/*
 jobject mat_to_bitmap(JNIEnv * env, Mat & src, bool needPremultiplyAlpha, jobject bitmap_config){
     jclass java_bitmap_class = (jclass)env->FindClass("android/graphics/Bitmap");
     jmethodID mid = env->GetStaticMethodID(java_bitmap_class,
@@ -98,4 +85,31 @@ jobject mat_to_bitmap(JNIEnv * env, Mat & src, bool needPremultiplyAlpha, jobjec
         env->ThrowNew(je, "Unknown exception in JNI code {nMatToBitmap}");
         return bitmap;
     }
+}*/
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_zhouge_opencv_CropImage_1Activity_getGrayImage(JNIEnv *env, jclass type,jlong inMatAddr,jlong outMatAddr) {
+    Mat *inMat=(Mat *)inMatAddr;
+    Mat *outMat=(Mat *)outMatAddr;
+    cvtColor(*inMat,*outMat,COLOR_BGR2GRAY);
+    return;
 }
+
+/*
+jobject GrayImag(JNIEnv *env, jclass type,jobject bmpObj)
+{
+    AndroidBitmapInfo bmpInfo={0};
+    if(AndroidBitmap_getInfo(env,bmpObj,&bmpInfo)<0)
+        return nullptr;
+    void* pixels =NULL;
+    if(AndroidBitmap_lockPixels(env,bmpObj,&pixels)<0)
+        return nullptr;
+    Mat m(bmpInfo.height,bmpInfo.width,CV_8UC4,pixels);
+
+    Mat *dst=new Mat();
+    cvtColor(m,*dst,COLOR_BGR2GRAY);
+
+    AndroidBitmap_unlockPixels(env,bmpObj);
+    return _bitmap;
+}*/
