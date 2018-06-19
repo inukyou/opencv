@@ -112,4 +112,12 @@ jobject GrayImag(JNIEnv *env, jclass type,jobject bmpObj)
 
     AndroidBitmap_unlockPixels(env,bmpObj);
     return _bitmap;
-}*/
+}*/extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_zhouge_opencv_CameraActivity_getGrayImage(JNIEnv *env, jclass type,
+                                                           jlong inMatAddr, jlong outMatAddr) {
+    Mat *inMat=(Mat *)inMatAddr;
+    Mat *outMat=(Mat *)outMatAddr;
+    cvtColor(*inMat,*outMat,COLOR_BGR2GRAY);
+    return;
+}

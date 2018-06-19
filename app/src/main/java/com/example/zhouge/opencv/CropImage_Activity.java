@@ -62,18 +62,15 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
         button_crop.setOnClickListener(this);
         button_cannel.setOnClickListener(this);
 
-        long matAddr=getIntent().getLongExtra("mat_addr",0);
-        if(matAddr==0)
-            Toast.makeText(this,"data_null",Toast.LENGTH_LONG).show();
-        else
-        {
-            mat=new Mat(matAddr);
-            Bitmap bitmap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(mat,bitmap);
-            mat.release();
-            cropImageView.setDrawable(bitmap,bitmap.getWidth(),bitmap.getHeight());
 
-        }
+        mat=staticMat.clone();
+        getGrayImage(mat.nativeObj,mat.nativeObj);
+        Bitmap bitmap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(mat,bitmap);
+        mat.release();
+        cropImageView.setDrawable(bitmap,bitmap.getWidth(),bitmap.getHeight());
+
+
 
         copyToSD(LANGUAGE_PATH, DEFAULT_LANGUAGE_NAME);
         tessBaseAPI=new TessBaseAPI();
