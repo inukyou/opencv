@@ -17,7 +17,7 @@ public class opencvActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST_CODE=0;
 
-    protected static Mat mat_clon;
+    protected static Mat staticMat;
 
 
     private static boolean hasInit=false;
