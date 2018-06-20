@@ -22,6 +22,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static com.googlecode.tesseract.android.TessBaseAPI.OEM_DEFAULT;
 
@@ -40,6 +43,18 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     private static final String LANGUAGE_PATH = tessdata +File.separator + DEFAULT_LANGUAGE_NAME;
     TessBaseAPI tessBaseAPI;
 
+    private static final int INPUT_SIZE = 224;
+    private static final int IMAGE_MEAN = 117;
+    private static final float IMAGE_STD = 1;
+    private static final String INPUT_NAME = "input";
+    private static final String OUTPUT_NAME = "output";
+
+    private static final String MODEL_FILE = "file:///android_asset/tensorflow_inception_graph.pb";
+    private static final String LABEL_FILE =
+            "file:///android_asset/imagenet_comp_graph_label_strings.txt";
+
+    private Classifier classifier;
+    private Executor executor = Executors.newSingleThreadExecutor();
 
     private static native void getGrayImage(long inMatAddr,long outMatAddr);
 
@@ -48,19 +63,21 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     Button button_crop,button_cannel;
     Bitmap cropBitMap;
     Dialog dia;
-    TextView textView;
+    TextView textView,textView2;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crop_image_);
 
         textView=(TextView)findViewById(R.id.recognitetext);
+        textView2=(TextView)findViewById(R.id.classfytext);
         cropImageView=(CropImageView)findViewById(R.id.cropimageview);
         button_crop=(Button)findViewById(R.id.crop_button);
         button_cannel=(Button)findViewById(R.id.button_cannel);
 
         button_crop.setOnClickListener(this);
         button_cannel.setOnClickListener(this);
+
 
 
         mat=staticMat.clone();
@@ -76,6 +93,8 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
         tessBaseAPI=new TessBaseAPI();
         tessBaseAPI.init(DATAPATH, DEFAULT_LANGUAGE);
 
+        initTensorFlowAndLoadModel();
+
     }
 
     @Override
@@ -83,6 +102,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
         switch (view.getId())
         {
             case R.id.crop_button:{
+
                 cropBitMap=cropImageView.getCropImage();
                 Mat m=new Mat();
                 Utils.bitmapToMat(cropBitMap,mat);
@@ -92,7 +112,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
 
                 dia = new Dialog(this, R.style.edit_AlertDialog_style);
                 ImageView imageView=new ImageView(this);
-                imageView.setImageBitmap(grayBitMap);
+                //imageView.setImageBitmap(cropBitMap);
                 dia.setCanceledOnTouchOutside(true);
                 dia.setContentView(imageView);
                 dia.show();
@@ -100,6 +120,16 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                 final String s=tessBaseAPI.getUTF8Text();
                 Toast.makeText(this,s,Toast.LENGTH_LONG).show();
                 textView.setText(s);
+
+                Bitmap recognizeBitMap = Bitmap.createScaledBitmap( cropBitMap, INPUT_SIZE, INPUT_SIZE, false);
+                //ImageView imageView=new ImageView(this);
+                imageView.setImageBitmap(recognizeBitMap);
+
+                final List<Classifier.Recognition> results = classifier.recognizeImage(recognizeBitMap);
+                textView2.setText(results.toString());
+
+
+
                 break;
             }
             case R.id.button_cannel:{
@@ -160,5 +190,36 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                 e.printStackTrace();
             }
         }
+    }
+
+    private void initTensorFlowAndLoadModel() {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    classifier = TensorFlowImageClassifier.create(
+                            getAssets(),
+                            MODEL_FILE,
+                            LABEL_FILE,
+                            INPUT_SIZE,
+                            IMAGE_MEAN,
+                            IMAGE_STD,
+                            INPUT_NAME,
+                            OUTPUT_NAME);
+                    makeButtonVisible();
+                } catch (final Exception e) {
+                    throw new RuntimeException("Error initializing TensorFlow!", e);
+                }
+            }
+        });
+    }
+
+    private void makeButtonVisible() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                button_cannel.setVisibility(View.VISIBLE);
+            }
+        });
     }
 }

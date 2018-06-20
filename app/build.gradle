@@ -42,6 +42,12 @@ dependencies {
     implementation 'cjt.library.wheel:camera:1.1.9'
 
     implementation project(':openCVLibrary341')
+   /* androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })*/
+    implementation 'org.tensorflow:tensorflow-android:1.2.0'
+    //compile 'org.tensorflow:tensorflow-android:1.2.0'
+    //compile 'com.wonderkiln:camerakit:0.13.1'
 }
 
 task nativeLibsToJar(type: Jar, description: 'create a jar archive of the native libs') {
@@ -54,3 +60,33 @@ task nativeLibsToJar(type: Jar, description: 'create a jar archive of the native
 tasks.withType(JavaCompile) {
     compileTask -> compileTask.dependsOn(nativeLibsToJar)
 }
+
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.0'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
+    }
+}
+
+/*task clean(type: Delete) {
+    delete rootProject.buildDir
+}*/
