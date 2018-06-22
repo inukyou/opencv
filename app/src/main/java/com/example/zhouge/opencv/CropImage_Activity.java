@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -136,12 +137,12 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
 
 
                 //识别物体
-                //Bitmap recognizeBitMap = Bitmap.createScaledBitmap( cropBitMap, INPUT_SIZE, INPUT_SIZE, false);
+                Bitmap recognizeBitMap = Bitmap.createScaledBitmap( cropBitMap, INPUT_SIZE, INPUT_SIZE, false);
                 //ImageView imageView=new ImageView(this);
                 //imageView.setImageBitmap(recognizeBitMap);
 
-                //final List<Classifier.Recognition> results = classifier.recognizeImage(recognizeBitMap);
-                //textView2.setText(results.toString());
+                final List<Classifier.Recognition> results = classifier.recognizeImage(recognizeBitMap);
+                textView2.setText(results.toString());
 
 
 
