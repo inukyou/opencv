@@ -2,8 +2,8 @@ package com.example.zhouge.opencv;
 
 import android.app.Dialog;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Environment;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -11,22 +11,26 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.ocr.sdk.OCR;
+import com.baidu.ocr.sdk.OnResultListener;
+import com.baidu.ocr.sdk.exception.OCRError;
+import com.baidu.ocr.sdk.model.AccessToken;
+import com.baidu.ocr.sdk.model.GeneralBasicParams;
+import com.baidu.ocr.sdk.model.GeneralResult;
+import com.baidu.ocr.sdk.model.WordSimple;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
-import static com.googlecode.tesseract.android.TessBaseAPI.OEM_DEFAULT;
 
 public class CropImage_Activity extends opencvActivity implements View.OnClickListener {
 
@@ -39,8 +43,11 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     static final String DEFAULT_LANGUAGE = "chi_sim";
     /** * assets中的文件名 */
     private static final String DEFAULT_LANGUAGE_NAME = DEFAULT_LANGUAGE + ".traineddata";
+    private static final String IMAGE_NAME = "imagetest.jpg";
     /** * 保存到SD卡中的完整文件名 */
     private static final String LANGUAGE_PATH = tessdata +File.separator + DEFAULT_LANGUAGE_NAME;
+    private static final String IMAGETEMP_PATH =  DATAPATH + File.separator+ "tesseract"+ File.separator+ "tessdata" +File.separator + "imagetest.jpg";
+    private static final String IMAGETEMP_DATAPATH =  DATAPATH + File.separator+ "tesseract"+ File.separator+ "tessdata" ;
     TessBaseAPI tessBaseAPI;
 
     private static final int INPUT_SIZE = 224;
@@ -48,6 +55,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     private static final float IMAGE_STD = 1;
     private static final String INPUT_NAME = "input";
     private static final String OUTPUT_NAME = "output";
+    private String mFilePath;
 
     private static final String MODEL_FILE = "file:///android_asset/tensorflow_inception_graph.pb";
     private static final String LABEL_FILE =
@@ -90,9 +98,11 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
 
 
         copyToSD(LANGUAGE_PATH, DEFAULT_LANGUAGE_NAME);
+        copyToSD(IMAGETEMP_PATH, IMAGE_NAME);
         tessBaseAPI=new TessBaseAPI();
         tessBaseAPI.init(DATAPATH, DEFAULT_LANGUAGE);
 
+        initAccessToken();
         initTensorFlowAndLoadModel();
 
     }
@@ -121,12 +131,17 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                 Toast.makeText(this,s,Toast.LENGTH_LONG).show();
                 textView.setText(s);
 
-                Bitmap recognizeBitMap = Bitmap.createScaledBitmap( cropBitMap, INPUT_SIZE, INPUT_SIZE, false);
-                //ImageView imageView=new ImageView(this);
-                imageView.setImageBitmap(recognizeBitMap);
+                saveImage(grayBitMap);
+                recognizeResult();
 
-                final List<Classifier.Recognition> results = classifier.recognizeImage(recognizeBitMap);
-                textView2.setText(results.toString());
+
+                //识别物体
+                //Bitmap recognizeBitMap = Bitmap.createScaledBitmap( cropBitMap, INPUT_SIZE, INPUT_SIZE, false);
+                //ImageView imageView=new ImageView(this);
+                //imageView.setImageBitmap(recognizeBitMap);
+
+                //final List<Classifier.Recognition> results = classifier.recognizeImage(recognizeBitMap);
+                //textView2.setText(results.toString());
 
 
 
@@ -222,4 +237,68 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
             }
         });
     }
+
+    private void initAccessToken() {
+        OCR.getInstance(this).initAccessToken(new OnResultListener<AccessToken>() {
+            @Override
+            public void onResult(AccessToken result) {
+                String token = result.getAccessToken();
+                //hasGotToken = true;
+            }
+
+            @Override
+            public void onError(OCRError ocrError) {
+                ocrError.printStackTrace();
+                //alertText("licence方式获取token失败", ocrError.getMessage());
+            }
+        }, getApplicationContext());
+        //getApplicationContext生命周期是整个应用
+    }
+
+    private void recognizeResult() {
+        GeneralBasicParams param = new GeneralBasicParams();
+        //设置方向检测
+        param.setDetectDirection(true);
+        param.setImageFile(new File(IMAGETEMP_PATH));
+        System.out.println(IMAGETEMP_PATH);
+        //ImageView imageView=new ImageView(this);
+        //imageView.setImageURI(Uri.parse(IMAGETEMP_PATH));
+        OCR.getInstance(this).recognizeGeneralBasic(param, new OnResultListener<GeneralResult>() {
+            @Override
+            public void onResult(GeneralResult result) {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (WordSimple wordSimple : result.getWordList()) {
+                    stringBuilder.append(wordSimple.getWords());
+                    stringBuilder.append("\n");
+                }
+                textView2.setText("识别结果:" + "" + result.getJsonRes());
+            }
+
+            @Override
+            public void onError(OCRError error) {
+                //textView2.setText(error.getErrorCode() + "" + error.getMessage());
+               System.out.println("错误了 "+ error.getMessage());
+            }
+        });
+    }
+
+    public void saveImage(Bitmap bmp) {
+        /*File appDir = new File(Environment.getExternalStorageDirectory(), "Boohee");
+        if (!appDir.exists()) {
+            appDir.mkdir();
+        }*/
+        String fileName =  "phototemp.jpg";
+        File file = new File(IMAGETEMP_DATAPATH, fileName);
+        try {
+            FileOutputStream fos = new FileOutputStream(file);
+            bmp.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
