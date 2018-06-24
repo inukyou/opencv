@@ -62,6 +62,10 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     private static final String LABEL_FILE =
             "file:///android_asset/imagenet_comp_graph_label_strings.txt";
 
+    /*private static final String MODEL_FILE = "file:///android_asset/tensorflow_inception_graph.pb";
+    private static final String LABEL_FILE =
+            "file:///android_asset/imagenet_comp_graph_label_strings.txt";*/
+
     private Classifier classifier;
     private Executor executor = Executors.newSingleThreadExecutor();
 
@@ -272,7 +276,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                     stringBuilder.append(wordSimple.getWords());
                     stringBuilder.append("\n");
                 }
-                textView2.setText("识别结果:" + "" + result.getJsonRes());
+                //textView2.setText("识别结果:" + "" + result.getJsonRes());
             }
 
             @Override
