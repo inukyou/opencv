@@ -30,7 +30,6 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     protected static native void getGrayImage(long inMatAddr,long outMatAddr);
     protected static native long[] getTextRect(long inMataddr);
     protected static native void releaseAll();
-
     ArrayList<BookInfo> bookList=null;
 
     String ocrResult="";
