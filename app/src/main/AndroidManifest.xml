@@ -3,8 +3,13 @@
     package="com.example.zhouge.opencv">
 
     <uses-permission android:name="android.permission.FLASHLIGHT" />
+
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+
+
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -33,7 +38,14 @@
             </intent-filter>
         </activity>
         <activity android:name=".CropImage_Activity" />
-        <activity android:name=".CameraActivity"></activity>
+        <activity android:name=".CameraActivity" />
+
+        <service
+            android:name=".ocrService"
+            android:exported="false" />
+        <service
+            android:name=".HttpService"
+            android:exported="false"/>
     </application>
 
 </manifest>

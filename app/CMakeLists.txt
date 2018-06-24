@@ -8,7 +8,8 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(OpenCV_STATIC ON)#1
 
-set(OpenCV_DIR H:/OpenCV-android-sdk/sdk/native/jni)#2
+#set(OpenCV_DIR H:/OpenCV-android-sdk/sdk/native/jni)#2
+set(OpenCV_DIR /home/zhouge/openv/OpenCV-android-sdk/sdk/native/jni)#2
 
 find_package(OpenCV REQUIRED)#3
 

@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Window;
 import android.view.WindowManager;
 
 import org.opencv.android.OpenCVLoader;
@@ -14,6 +15,8 @@ import org.opencv.core.Mat;
 
 
 public class opencvActivity extends AppCompatActivity {
+
+
 
     private static final int PERMISSION_REQUEST_CODE=0;
 
@@ -28,6 +31,14 @@ public class opencvActivity extends AppCompatActivity {
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //取消标题
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+
+
+
+
         if(!hasInit) {
             hasInit=OpenCVLoader.initDebug();
         }
@@ -48,5 +59,6 @@ public class opencvActivity extends AppCompatActivity {
 
         }
     }
+
 
 }
