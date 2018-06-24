@@ -11,8 +11,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
@@ -25,6 +27,7 @@ import okhttp3.Response;
 public class HttpService extends IntentService {
 
     OkHttpClient okHttpClient;
+    ArrayList<BookInfo> bookList;
 
 
     public HttpService()
@@ -50,10 +53,14 @@ public class HttpService extends IntentService {
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
-        Request request=new Request.Builder().url("http://192.168.1.106:8080/test/FirstServlet").build();
+        bookList=new ArrayList<>();
+        String ocrResult=intent.getStringExtra("ocrResult");
+        if(ocrResult==null||ocrResult.equals(""))
+            sendMess();
         String result="";
-        ArrayList<BookInfo> bookList=new ArrayList<>();
         try {
+            RequestBody requestBody=new FormBody.Builder().add("ocrResult",ocrResult).build();
+            Request request=new Request.Builder().url("http://192.168.1.106:8080/test/FirstServlet").post(requestBody).build();
             Response response=okHttpClient.newCall(request).execute();
             result=response.body().string();
             bookList=BookInfo.JSONtoBookInfoList(result);
@@ -61,10 +68,14 @@ public class HttpService extends IntentService {
         } catch (IOException e) {
             result=null;
         }
+
+    }
+
+    private void sendMess()
+    {
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         Intent broadcastIntent = new Intent("HttpOver");
         broadcastIntent.putExtra("bookList",(Serializable)bookList);
-        broadcastIntent.putExtra("httpResult",result);
         localBroadcastManager.sendBroadcast(broadcastIntent);
     }
 }

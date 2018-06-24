@@ -110,6 +110,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                         Intent serviceIntent=new Intent(activity,HttpService.class);
+                        serviceIntent.putExtra("ocrResult",ocrResult);
                         //serviceIntent.putExtra("imageMat",m.nativeObj);
                         dialog=waitDialog.build();
                         dialog.show();

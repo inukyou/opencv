@@ -22,12 +22,14 @@ public final class BookInfo {
             JSONArray jarry=new JSONArray(JSONString);
             for(int i=0;i<jarry.length();i++)
             {
-                JSONObject jobj=new JSONObject();
+                JSONObject jobj=jarry.getJSONObject(i);
                 BookInfo bookInfo=new BookInfo();
                 bookInfo.id=jobj.getInt("id");
                 bookInfo.name=jobj.getString("BookName");
                 bookInfo.author=jobj.getString("author");
                 bookInfo.publicName=jobj.getString("publish");
+
+                System.out.println(bookInfo.id+"  "+bookInfo.name);
                 bookList.add(bookInfo);
             }
         } catch (JSONException e) {
