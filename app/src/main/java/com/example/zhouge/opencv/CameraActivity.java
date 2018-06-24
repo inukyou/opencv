@@ -25,7 +25,7 @@ public class CameraActivity extends opencvActivity {
 
     JCameraView jCameraView;
     Activity activity;
-    private static native void getGrayImage(long inMatAddr,long outMatAddr);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

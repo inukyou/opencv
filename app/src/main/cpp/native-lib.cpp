@@ -1,123 +1,200 @@
 #include <jni.h>
 
 #include <string>
+#include <vector>
 #include <android/bitmap.h>
 #include <opencv2/opencv.hpp>
 
 using namespace cv;
+using namespace std;
+
+size_t rowsCount=0;
+vector<void *> objectVect;
 
 
-//jobject mat_to_bitmap(JNIEnv * env, Mat & src, bool needPremultiplyAlpha, jobject bitmap_config);
-jobject GrayImag(JNIEnv *env, jclass type,jobject bmpObj);
+vector<Rect> GetRowRects(Mat &gray)
+{
+    vector<Rect>rows;
+    int height = gray.rows;
+    int *projection = new int[height]();
+    Mat src = gray;
+    for (int y = 0; y < gray.rows; ++y)
+    {
+        for (int x = 0; x < gray.cols; ++x)
+        {
+            /*CvScalar s;
+            s = cvGet2D(&src, y, x);
+            if (int(s.val[0]) == 255)
+                projection[y]++;*/
+            uchar val = src.at<uchar>(y,x);
+            if((int)val==255)
+                projection[y]++;
+        }
+    }
 
-extern "C" JNIEXPORT jstring
+    bool inLine = false;
+    int start = 0;
 
-JNICALL
-Java_com_example_zhouge_opencv_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    std::string hello = "Hello from C++";
-    return env->NewStringUTF(hello.c_str());
-}
+    for (int i = 0; i < height; i++)
+    {
+        if (!inLine && projection[i] > 20)
+        {
+            //由空白进入字符区域了，记录标记
+            inLine = true;
+            start = i;
+        }
+        else if ((i - start > 8) && projection[i] < 20 && inLine)
+        {
+            //由字符区域进入空白区域了
+            inLine = false;
 
-
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_example_zhouge_opencv_MainActivity_getGrayImage(JNIEnv *env, jclass type,jlong inMatAddr,jlong outMatAddr) {
-    Mat *inMat=(Mat *)inMatAddr;
-    Mat *outMat=(Mat *)outMatAddr;
-    cvtColor(*inMat,*outMat,COLOR_BGR2GRAY);
-    return;
-}
-
-/*
-jobject mat_to_bitmap(JNIEnv * env, Mat & src, bool needPremultiplyAlpha, jobject bitmap_config){
-    jclass java_bitmap_class = (jclass)env->FindClass("android/graphics/Bitmap");
-    jmethodID mid = env->GetStaticMethodID(java_bitmap_class,
-                                           "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
-
-    jobject bitmap = env->CallStaticObjectMethod(java_bitmap_class,
-                                                 mid, src.size().width, src.size().height, bitmap_config);
-    AndroidBitmapInfo  info;
-    void*              pixels = 0;
-
-    try {
-        CV_Assert(AndroidBitmap_getInfo(env, bitmap, &info) >= 0);
-        CV_Assert(src.type() == CV_8UC1 || src.type() == CV_8UC3 || src.type() == CV_8UC4);
-        CV_Assert(AndroidBitmap_lockPixels(env, bitmap, &pixels) >= 0);
-        CV_Assert(pixels);
-        if(info.format == ANDROID_BITMAP_FORMAT_RGBA_8888){
-            Mat tmp(info.height, info.width, CV_8UC4, pixels);
-            if(src.type() == CV_8UC1){
-                cvtColor(src, tmp, CV_GRAY2RGBA);
-            }else if(src.type() == CV_8UC3){
-                cvtColor(src, tmp, CV_RGB2RGBA);
-            }else if(src.type() == CV_8UC4){
-                if(needPremultiplyAlpha){
-                    cvtColor(src, tmp, COLOR_RGBA2mRGBA);
-                }else{
-                    src.copyTo(tmp);
-                }
-            }
-        }else{
-            // info.format == ANDROID_BITMAP_FORMAT_RGB_565
-            Mat tmp(info.height, info.width, CV_8UC2, pixels);
-            if(src.type() == CV_8UC1){
-                cvtColor(src, tmp, CV_GRAY2BGR565);
-            }else if(src.type() == CV_8UC3){
-                cvtColor(src, tmp, CV_RGB2BGR565);
-            }else if(src.type() == CV_8UC4){
-                cvtColor(src, tmp, CV_RGBA2BGR565);
+            //忽略高度太小的行，比如分隔线
+            if (i - start > 20)
+            {
+                //记录下位置
+                Rect rect = Rect(0, start , gray.cols, i - start + 2);
+                rows.push_back(rect);
             }
         }
-        AndroidBitmap_unlockPixels(env, bitmap);
-        return bitmap;
-    }catch(cv::Exception e){
-        AndroidBitmap_unlockPixels(env, bitmap);
-        jclass je = env->FindClass("org/opencv/core/CvException");
-        if(!je) je = env->FindClass("java/lang/Exception");
-        env->ThrowNew(je, e.what());
-        return bitmap;
-    }catch (...){
-        AndroidBitmap_unlockPixels(env, bitmap);
-        jclass je = env->FindClass("java/lang/Exception");
-        env->ThrowNew(je, "Unknown exception in JNI code {nMatToBitmap}");
-        return bitmap;
     }
-}*/
+    delete projection;
+    return rows;
+}
+
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_zhouge_opencv_CropImage_1Activity_getGrayImage(JNIEnv *env, jclass type,jlong inMatAddr,jlong outMatAddr) {
+Java_com_example_zhouge_opencv_CropImage_1Activity_getGrayImage(JNIEnv *env, jclass type,
+                                                                jlong inMatAddr, jlong outMatAddr) {
+
     Mat *inMat=(Mat *)inMatAddr;
     Mat *outMat=(Mat *)outMatAddr;
     cvtColor(*inMat,*outMat,COLOR_BGR2GRAY);
     return;
 }
 
-/*
-jobject GrayImag(JNIEnv *env, jclass type,jobject bmpObj)
-{
-    AndroidBitmapInfo bmpInfo={0};
-    if(AndroidBitmap_getInfo(env,bmpObj,&bmpInfo)<0)
-        return nullptr;
-    void* pixels =NULL;
-    if(AndroidBitmap_lockPixels(env,bmpObj,&pixels)<0)
-        return nullptr;
-    Mat m(bmpInfo.height,bmpInfo.width,CV_8UC4,pixels);
 
-    Mat *dst=new Mat();
-    cvtColor(m,*dst,COLOR_BGR2GRAY);
 
-    AndroidBitmap_unlockPixels(env,bmpObj);
-    return _bitmap;
-}*/extern "C"
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_example_zhouge_opencv_CropImage_1Activity_getRowsCount(JNIEnv *env, jclass type) {
+
+    return (jint)rowsCount;
+
+}
+
+
+extern "C"
+JNIEXPORT jlongArray JNICALL
+Java_com_example_zhouge_opencv_CropImage_1Activity_getTextRect(JNIEnv *env, jclass type,
+                                                               jlong inMataddr) {
+
+    Mat *image=(Mat *)inMataddr;
+    if (image->rows*image->cols>1000000)
+    {
+        int t;
+        if (image->cols>image->rows)
+            t = 1000;
+        else
+            t = 800;
+        resize(*image, *image, Size(t, image->rows*1.0 / image->cols * t), 0, 0, CV_INTER_LINEAR);
+    }
+
+    Mat *gray;
+    Mat *data=new Mat(image->cols,image->rows,CV_8UC1);
+    if(image->channels()>1) {
+        gray=new Mat(image->cols,image->rows,CV_8UC1);
+        cvtColor(*image, *gray, COLOR_BGR2GRAY);
+    }
+    else
+        gray=image;
+    int blockSize = 25;
+    int constValue = 10;
+    adaptiveThreshold(*gray, *data, 255, ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY_INV, blockSize, constValue);
+    vector<Rect>rows = GetRowRects(*data);
+    size_t RectsSize=rows.size();
+    rowsCount=RectsSize;
+
+    jlongArray matsAddr=env->NewLongArray(RectsSize);
+    jlong *addrArr=env->GetLongArrayElements(matsAddr,NULL);
+
+
+
+    for(size_t i=0;i<RectsSize;i++)
+    {
+        Rect rect=rows.at(i);
+        Mat *tmp=new Mat(rect.size().width,rect.size().height,CV_8UC1);
+        *tmp=(*gray)(rect);
+        addrArr[i]=(long)tmp;
+    }
+
+    data->release();
+    delete(data);
+    env->ReleaseLongArrayElements(matsAddr,addrArr,0);
+    return matsAddr;
+
+
+}
+
+
+extern "C"
+JNIEXPORT jlongArray JNICALL
+Java_com_example_zhouge_opencv_ocrService_getTextRect(JNIEnv *env, jclass type, jlong inMataddr) {
+
+
+    Mat *image=(Mat *)inMataddr;
+    if (image->rows*image->cols>1000000)
+    {
+        int t;
+        if (image->cols>image->rows)
+            t = 1000;
+        else
+            t = 800;
+        resize(*image, *image, Size(t, image->rows*1.0 / image->cols * t), 0, 0, CV_INTER_LINEAR);
+    }
+
+    Mat *gray;
+    Mat *data=new Mat(image->cols,image->rows,CV_8UC1);
+    if(image->channels()>1) {
+        gray=new Mat(image->cols,image->rows,CV_8UC1);
+        cvtColor(*image, *gray, COLOR_BGR2GRAY);
+        objectVect.push_back(gray);
+    }
+    else
+        gray=image;
+    int blockSize = 25;
+    int constValue = 10;
+    adaptiveThreshold(*gray, *data, 255, ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY_INV, blockSize, constValue);
+    vector<Rect>rows = GetRowRects(*data);
+    size_t RectsSize=rows.size();
+    rowsCount=RectsSize;
+
+    jlongArray matsAddr=env->NewLongArray(RectsSize);
+    jlong *addrArr=env->GetLongArrayElements(matsAddr,NULL);
+
+
+
+    for(size_t i=0;i<RectsSize;i++)
+    {
+        Rect rect=rows.at(i);
+        Mat *tmp=new Mat(rect.size().width,rect.size().height,CV_8UC1);
+        *tmp=(*gray)(rect);
+        addrArr[i]=(long)tmp;
+        objectVect.push_back(tmp);
+    }
+
+    data->release();
+    delete(data);
+    env->ReleaseLongArrayElements(matsAddr,addrArr,0);
+    return matsAddr;
+
+}extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_zhouge_opencv_CameraActivity_getGrayImage(JNIEnv *env, jclass type,
-                                                           jlong inMatAddr, jlong outMatAddr) {
-    Mat *inMat=(Mat *)inMatAddr;
-    Mat *outMat=(Mat *)outMatAddr;
-    cvtColor(*inMat,*outMat,COLOR_BGR2GRAY);
-    return;
+Java_com_example_zhouge_opencv_CropImage_1Activity_releaseAll(JNIEnv *env, jclass type) {
+
+    for(size_t i=objectVect.size()-1;i>=0;i--) {
+        delete (objectVect.at(i));
+        objectVect.pop_back();
+    }
+
 }

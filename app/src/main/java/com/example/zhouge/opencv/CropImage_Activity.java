@@ -1,47 +1,41 @@
 package com.example.zhouge.opencv;
 
-import android.app.Dialog;
+
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.os.Environment;
-import android.support.v7.app.AppCompatActivity;
+import android.support.annotation.NonNull;
+import android.support.v4.content.LocalBroadcastManager;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.googlecode.tesseract.android.TessBaseAPI;
-
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import static com.googlecode.tesseract.android.TessBaseAPI.OEM_DEFAULT;
-
 public class CropImage_Activity extends opencvActivity implements View.OnClickListener {
 
+    protected static native void getGrayImage(long inMatAddr,long outMatAddr);
+    protected static native long[] getTextRect(long inMataddr);
+    protected static native void releaseAll();
 
-    private static final String DATAPATH = Environment.getExternalStorageDirectory().getAbsolutePath() ;
-    /** * 在DATAPATH中新建这个目录，TessBaseAPI初始化要求必须有这个目录。 */
-    private static final String tessdata = DATAPATH + File.separator+ "tessdata";
-    /** * TessBaseAPI初始化测第二个参数，就是识别库的名字不要后缀名。 */
-    // static final String DEFAULT_LANGUAGE = "chi_sim";
-    static final String DEFAULT_LANGUAGE = "chi_sim";
-    /** * assets中的文件名 */
-    private static final String DEFAULT_LANGUAGE_NAME = DEFAULT_LANGUAGE + ".traineddata";
-    /** * 保存到SD卡中的完整文件名 */
-    private static final String LANGUAGE_PATH = tessdata +File.separator + DEFAULT_LANGUAGE_NAME;
-    TessBaseAPI tessBaseAPI;
+    ArrayList<BookInfo> bookList=null;
+
+    String ocrResult="";
+    String HttpResult="";
+
 
     private static final int INPUT_SIZE = 224;
     private static final int IMAGE_MEAN = 117;
@@ -55,21 +49,30 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
 
     private Classifier classifier;
     private Executor executor = Executors.newSingleThreadExecutor();
+    private Activity activity;
 
-    private static native void getGrayImage(long inMatAddr,long outMatAddr);
+    LocalBroadcastManager localBroadcastManager;
+    OCRReceiver ocrReceiver;
+    HttpReceiver httpReceiver;
+    MaterialDialog.Builder waitDialog,ocrDialog,httpDialog;
+    MaterialDialog dialog;
 
-    Mat mat;
+
     CropImageView cropImageView;
     Button button_crop,button_cannel;
     Bitmap cropBitMap;
-    Dialog dia;
-    TextView textView,textView2;
+
+
+    TextView textView2;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crop_image_);
 
-        textView=(TextView)findViewById(R.id.recognitetext);
+        activity=this;
+
+
+
         textView2=(TextView)findViewById(R.id.classfytext);
         cropImageView=(CropImageView)findViewById(R.id.cropimageview);
         button_crop=(Button)findViewById(R.id.crop_button);
@@ -80,56 +83,61 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
 
 
 
-        mat=staticMat.clone();
-        getGrayImage(mat.nativeObj,mat.nativeObj);
+        Mat mat=staticMat.clone();
         Bitmap bitmap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(mat,bitmap);
         mat.release();
         cropImageView.setDrawable(bitmap,bitmap.getWidth(),bitmap.getHeight());
 
 
+        regist();
+        waitDialog=new MaterialDialog.Builder(this)
+                .title("")
+                .content("处理中")
+                .progress(true, 0)
+                ;
 
-        copyToSD(LANGUAGE_PATH, DEFAULT_LANGUAGE_NAME);
-        tessBaseAPI=new TessBaseAPI();
-        tessBaseAPI.init(DATAPATH, DEFAULT_LANGUAGE);
 
+        httpDialog=new MaterialDialog.Builder(this)
+                .title("查询结果")
+                .positiveText("确定")
+                .negativeText("取消");
+
+         ocrDialog= new MaterialDialog.Builder(this)
+                .title("识别结果")
+                .positiveText("确定")
+                .negativeText("取消")
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        Intent serviceIntent=new Intent(activity,HttpService.class);
+                        //serviceIntent.putExtra("imageMat",m.nativeObj);
+                        dialog=waitDialog.build();
+                        dialog.show();
+                        startService(serviceIntent);
+                    }
+                });
         initTensorFlowAndLoadModel();
 
     }
 
     @Override
     public void onClick(View view) {
+        String s="";
         switch (view.getId())
         {
             case R.id.crop_button:{
 
                 cropBitMap=cropImageView.getCropImage();
-                Mat m=new Mat();
-                Utils.bitmapToMat(cropBitMap,mat);
-                getGrayImage(mat.nativeObj,mat.nativeObj);
-                Bitmap grayBitMap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(mat,grayBitMap);
+                Mat m=new Mat(cropBitMap.getWidth(),cropBitMap.getHeight(), CvType.CV_8UC3);
+                Utils.bitmapToMat(cropBitMap,m);
+                //getGrayImage(mat.nativeObj,mat.nativeObj);
 
-                dia = new Dialog(this, R.style.edit_AlertDialog_style);
-                ImageView imageView=new ImageView(this);
-                //imageView.setImageBitmap(cropBitMap);
-                dia.setCanceledOnTouchOutside(true);
-                dia.setContentView(imageView);
-                dia.show();
-                tessBaseAPI.setImage(grayBitMap);
-                final String s=tessBaseAPI.getUTF8Text();
-                Toast.makeText(this,s,Toast.LENGTH_LONG).show();
-                textView.setText(s);
-
-                Bitmap recognizeBitMap = Bitmap.createScaledBitmap( cropBitMap, INPUT_SIZE, INPUT_SIZE, false);
-                //ImageView imageView=new ImageView(this);
-                imageView.setImageBitmap(recognizeBitMap);
-
-                final List<Classifier.Recognition> results = classifier.recognizeImage(recognizeBitMap);
-                textView2.setText(results.toString());
-
-
-
+                Intent serviceIntent=new Intent(this,ocrService.class);
+                serviceIntent.putExtra("imageMat",m.nativeObj);
+                startService(serviceIntent);
+                dialog= waitDialog.build();
+                dialog.show();
                 break;
             }
             case R.id.button_cannel:{
@@ -143,54 +151,10 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        tessBaseAPI.end();
+        localBroadcastManager.unregisterReceiver(ocrReceiver);
     }
 
-    private void copyToSD(String path, String name)
-    {
 
-
-//如果存在就删掉
-        File f = new File(path);
-        if (f.exists()){
-            return;
-        }
-        if (!f.exists()){
-            File p = new File(f.getParent());
-            if (!p.exists()){
-                p.mkdirs();
-            }
-            try {
-                f.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        InputStream is=null;
-        OutputStream os=null;
-        try {
-            is = getAssets().open(name);
-            File file = new File(path);
-            os = new FileOutputStream(file);
-            byte[] bytes = new byte[2048];
-            int len = 0;
-            while ((len = is.read(bytes)) != -1) {
-                os.write(bytes, 0, len);
-            }
-            os.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (is != null)
-                    is.close();
-                if (os != null)
-                    os.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     private void initTensorFlowAndLoadModel() {
         executor.execute(new Runnable() {
@@ -222,4 +186,49 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
             }
         });
     }
+
+    private void regist() {
+
+        IntentFilter ocrIntentFilter = new IntentFilter();
+        ocrIntentFilter.addAction("ocrOver");
+        ocrReceiver =new OCRReceiver();
+
+        IntentFilter httpIntentFilter = new IntentFilter();
+        httpIntentFilter.addAction("HttpOver");
+        httpReceiver =new HttpReceiver();
+
+        localBroadcastManager=LocalBroadcastManager.getInstance(this);
+        localBroadcastManager.registerReceiver(ocrReceiver,ocrIntentFilter);
+        localBroadcastManager.registerReceiver(httpReceiver,httpIntentFilter);
+    }
+
+
+    private class OCRReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            dialog.dismiss();
+            ocrResult=intent.getStringExtra("ocrResult");
+            ocrDialog.content(ocrResult);
+            ocrDialog.show();
+            //releaseAll();
+        }
+    }
+
+
+    private class HttpReceiver extends BroadcastReceiver{
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            HttpResult=intent.getStringExtra("httpResult");
+            bookList=(ArrayList<BookInfo>) intent.getSerializableExtra("bookList");
+            if(HttpResult==null)
+                HttpResult="null";
+            //httpDialog.content(HttpResult);
+            httpDialog.adapter(new BookAdapter(bookList),new LinearLayoutManager(activity));
+            dialog.dismiss();
+            httpDialog.show();
+        }
+    }
+
 }
