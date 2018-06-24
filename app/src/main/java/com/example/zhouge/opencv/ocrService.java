@@ -8,12 +8,20 @@ import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 
+import com.baidu.ocr.sdk.OCR;
+import com.baidu.ocr.sdk.OnResultListener;
+import com.baidu.ocr.sdk.exception.OCRError;
+import com.baidu.ocr.sdk.model.AccessToken;
+import com.baidu.ocr.sdk.model.GeneralBasicParams;
+import com.baidu.ocr.sdk.model.GeneralResult;
+import com.baidu.ocr.sdk.model.WordSimple;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +39,7 @@ public class ocrService extends IntentService {
     static {
         System.loadLibrary("native-lib");
     }
+
 
 
     private static final String DATAPATH = Environment.getExternalStorageDirectory().getAbsolutePath();
@@ -52,11 +61,17 @@ public class ocrService extends IntentService {
      */
     private static final String LANGUAGE_PATH = tessdata + File.separator + DEFAULT_LANGUAGE_NAME;
 
+    private static final String bitmapdata = DATAPATH + File.separator + "tesseract"+ File.separator + "tessdata";
 
+    //private String mFilePath =bitmapdata+File.separator+"image13.jpg";
+    //private String mFilePath =DATAPATH + File.separator + "tesseract"+ File.separator + "tessdata"+ File.separator+"image13.jpg";
+    private String mFilePath;
     protected static native long[] getTextRect(long inMataddr);
 
+    int weight,height;
+    String toresult = "";
+    FileOutputStream out;
 
-    String result = "";
 
 
     public ocrService() {
@@ -79,6 +94,37 @@ public class ocrService extends IntentService {
         copyToSD(LANGUAGE_PATH, DEFAULT_LANGUAGE_NAME);
         tessBaseAPI.init(DATAPATH, DEFAULT_LANGUAGE);
         Mat inMat = new Mat(addr);
+        Bitmap bitmap=Bitmap.createBitmap(inMat.width(),inMat.height(),Bitmap.Config.ARGB_8888);
+        //weight=inMat.width();
+        //height=inMat.width();
+        Utils.matToBitmap(inMat,bitmap);
+        if (Environment.getExternalStorageState().equals( Environment.MEDIA_MOUNTED)) // 判断是否可以对SDcard进行操作
+        {    // 获取SDCard指定目录下
+            //String  sdCardDir = Environment.getExternalStorageDirectory()+ "/CoolImage/";
+            String  sdCardDir =bitmapdata;
+            /*File dirFile  = new File(sdCardDir);  //目录转化成文件夹
+            if (!dirFile .exists()) {              //如果不存在，那就建立这个文件夹
+                dirFile .mkdirs();
+            } */                         //文件夹有啦，就可以保存图片啦
+            File file = new File(sdCardDir, "sbimage.jpg");// 在SDcard的目录下创建图片文,以当前时间为其命名
+            try {
+                out= new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+                System.out.println("_________保存到____sd______指定目录文件夹下____________________");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            try {
+                out.flush();
+                out.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //Toast.makeText(HahItemActivity.this,"保存已经至"+Environment.getExternalStorageDirectory()+"/CoolImage/"+"目录文件夹下", Toast.LENGTH_SHORT).show();
+        }
+        mFilePath=bitmapdata+ File.separator+"sbimage.jpg";
+
+
         long matAddrs[] = getTextRect(inMat.nativeObj);
         for (int i = 0; i < matAddrs.length; i++) {
             Mat tmp = new Mat(matAddrs[i]);
@@ -87,14 +133,17 @@ public class ocrService extends IntentService {
             tessBaseAPI.setImage(tmpBitmap);
             tmp.release();
             tmpBitmap.recycle();
-            result += tessBaseAPI.getUTF8Text() + " ";
+            toresult += tessBaseAPI.getUTF8Text() + "\n";
         }
         inMat.release();
         tessBaseAPI.end();
 
+        initAccessToken();
+        recognizeResult();
+
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         Intent broadcastIntent = new Intent("ocrOver");
-        broadcastIntent.putExtra("ocrResult",result);
+        broadcastIntent.putExtra("ocrResult",toresult);
         localBroadcastManager.sendBroadcast(broadcastIntent);
     }
 
@@ -139,6 +188,53 @@ public class ocrService extends IntentService {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void initAccessToken() {
+        OCR.getInstance(this).initAccessToken(new OnResultListener<AccessToken>() {
+            @Override
+            public void onResult(AccessToken result) {
+                String token = result.getAccessToken();
+                //hasGotToken = true;
+            }
+
+            @Override
+            public void onError(OCRError ocrError) {
+                ocrError.printStackTrace();
+                //alertText("licence方式获取token失败", ocrError.getMessage());
+            }
+        }, getApplicationContext());
+        //getApplicationContext生命周期是整个应用
+    }
+
+    private void recognizeResult() {
+        GeneralBasicParams param = new GeneralBasicParams();
+        //设置方向检测
+        param.setDetectDirection(true);
+        param.setImageFile(new File(mFilePath));
+        System.out.println(mFilePath);
+        OCR.getInstance(this).recognizeGeneralBasic(param, new OnResultListener<GeneralResult>() {
+            @Override
+            public void onResult(GeneralResult result) {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (WordSimple wordSimple : result.getWordList()) {
+                    stringBuilder.append(wordSimple.getWords());
+                    stringBuilder.append("\n");
+                }
+                //需要解析JSON格式
+                //if() {
+                    toresult = result.getJsonRes();
+                    System.out.println(toresult);
+                    System.out.println(weight+"     "+height);
+                //}
+                //txtResult.setText("识别结果:" + "" + result.getJsonRes());
+            }
+
+            @Override
+            public void onError(OCRError error) {
+                //txtResult.setText(error.getErrorCode() + "" + error.getMessage());
+            }
+        });
     }
 
 
