@@ -59,12 +59,13 @@ public class HttpService extends IntentService {
             sendMess();
         String result="";
         try {
-            RequestBody requestBody=new FormBody.Builder().add("ocrResult",ocrResult).build();
+            RequestBody requestBody=new FormBody.Builder().add("ocrResult",ocrResult).build();//建立一个http请求，传送识别结果
             Request request=new Request.Builder().url("http://192.168.1.106:8080/test/FirstServlet").post(requestBody).build();
             Response response=okHttpClient.newCall(request).execute();
             result=response.body().string();
             bookList=BookInfo.JSONtoBookInfoList(result);
 
+            sendMess();
         } catch (IOException e) {
             result=null;
         }

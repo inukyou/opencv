@@ -96,9 +96,9 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                 .title("")
                 .content("处理中")
                 .progress(true, 0)
-                ;
+                .cancelable(false);
 
-
+        dialog=waitDialog.build();
         httpDialog=new MaterialDialog.Builder(this)
                 .title("查询结果")
                 .positiveText("确定")
@@ -114,7 +114,6 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                         Intent serviceIntent=new Intent(activity,HttpService.class);
                         serviceIntent.putExtra("ocrResult",ocrResult);
                         //serviceIntent.putExtra("imageMat",m.nativeObj);
-                        dialog=waitDialog.build();
                         dialog.show();
                         startService(serviceIntent);
                     }
@@ -138,7 +137,6 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                 Intent serviceIntent=new Intent(this,ocrService.class);
                 serviceIntent.putExtra("imageMat",m.nativeObj);
                 startService(serviceIntent);
-                dialog= waitDialog.build();
                 dialog.show();
                 break;
             }
@@ -208,6 +206,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     private class OCRReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            dialog.cancel();
             dialog.dismiss();
             ocrResult=intent.getStringExtra("ocrResult");
             Bitmap bitmapten = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
@@ -229,8 +228,9 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
             bookList=(ArrayList<BookInfo>) intent.getSerializableExtra("bookList");
             if(HttpResult==null)
                 HttpResult="null";
-            //httpDialog.content(HttpResult);
+
             httpDialog.adapter(new BookAdapter(bookList),new LinearLayoutManager(activity));
+            dialog.cancel();
             dialog.dismiss();
             httpDialog.show();
         }
