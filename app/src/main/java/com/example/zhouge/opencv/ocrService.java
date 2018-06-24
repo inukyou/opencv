@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -95,17 +96,17 @@ public class ocrService extends IntentService {
         tessBaseAPI.init(DATAPATH, DEFAULT_LANGUAGE);
         Mat inMat = new Mat(addr);
         Bitmap bitmap=Bitmap.createBitmap(inMat.width(),inMat.height(),Bitmap.Config.ARGB_8888);
-        //weight=inMat.width();
-        //height=inMat.width();
+        weight=inMat.width();
+        height=inMat.width();
         Utils.matToBitmap(inMat,bitmap);
         if (Environment.getExternalStorageState().equals( Environment.MEDIA_MOUNTED)) // 判断是否可以对SDcard进行操作
         {    // 获取SDCard指定目录下
             //String  sdCardDir = Environment.getExternalStorageDirectory()+ "/CoolImage/";
             String  sdCardDir =bitmapdata;
-            /*File dirFile  = new File(sdCardDir);  //目录转化成文件夹
+            File dirFile  = new File(sdCardDir);  //目录转化成文件夹
             if (!dirFile .exists()) {              //如果不存在，那就建立这个文件夹
                 dirFile .mkdirs();
-            } */                         //文件夹有啦，就可以保存图片啦
+            }                         //文件夹有啦，就可以保存图片啦
             File file = new File(sdCardDir, "sbimage.jpg");// 在SDcard的目录下创建图片文,以当前时间为其命名
             try {
                 out= new FileOutputStream(file);
@@ -140,6 +141,7 @@ public class ocrService extends IntentService {
 
         initAccessToken();
         recognizeResult();
+
 
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         Intent broadcastIntent = new Intent("ocrOver");
@@ -222,7 +224,7 @@ public class ocrService extends IntentService {
                     stringBuilder.append("\n");
                 }
                 //需要解析JSON格式
-                //if() {
+                //if(height<=600) {
                     toresult = result.getJsonRes();
                     System.out.println(toresult);
                     System.out.println(weight+"     "+height);

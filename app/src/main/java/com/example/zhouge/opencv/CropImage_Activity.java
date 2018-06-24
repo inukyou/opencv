@@ -22,6 +22,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -60,6 +61,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     CropImageView cropImageView;
     Button button_crop,button_cannel;
     Bitmap cropBitMap;
+    Bitmap bitmap;
 
 
     TextView textView2;
@@ -83,7 +85,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
 
 
         Mat mat=staticMat.clone();
-        Bitmap bitmap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
+        bitmap=Bitmap.createBitmap(mat.width(),mat.height(),Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(mat,bitmap);
         mat.release();
         cropImageView.setDrawable(bitmap,bitmap.getWidth(),bitmap.getHeight());
@@ -208,6 +210,9 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
         public void onReceive(Context context, Intent intent) {
             dialog.dismiss();
             ocrResult=intent.getStringExtra("ocrResult");
+            Bitmap bitmapten = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
+            final List<Classifier.Recognition> results = classifier.recognizeImage(bitmapten);
+            ocrResult+="物体识别结果："+results.toString();
             ocrDialog.content(ocrResult);
             ocrDialog.show();
             //releaseAll();
