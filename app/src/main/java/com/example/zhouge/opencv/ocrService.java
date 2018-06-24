@@ -87,7 +87,7 @@ public class ocrService extends IntentService {
             tessBaseAPI.setImage(tmpBitmap);
             tmp.release();
             tmpBitmap.recycle();
-            result += tessBaseAPI.getUTF8Text() + "\n";
+            result += tessBaseAPI.getUTF8Text() + " ";
         }
         inMat.release();
         tessBaseAPI.end();
