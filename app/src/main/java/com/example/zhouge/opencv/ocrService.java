@@ -17,6 +17,9 @@ import com.baidu.ocr.sdk.model.GeneralResult;
 import com.baidu.ocr.sdk.model.WordSimple;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
@@ -224,9 +227,26 @@ public class ocrService extends IntentService {
                     stringBuilder.append("\n");
                 }
                 //需要解析JSON格式
-                //if(height<=600) {
+                if(height<=600) {
+                    String s="";
                     toresult = result.getJsonRes();
-                    System.out.println(toresult);
+                    try {
+                        JSONObject jobj = new JSONObject(toresult);
+                        JSONArray jarray = jobj.getJSONArray("words_result");
+                        for (int i = 0; i < jarray.length(); i++) {
+                            JSONObject o = jarray.getJSONObject(i);
+                            s+=o.getString("words");
+
+
+                        }
+                    } catch (JSONException e) {
+
+                    }
+
+                    toresult=s;
+                }
+
+                System.out.println(toresult);
                     System.out.println(weight+"     "+height);
                 //}
                 //txtResult.setText("识别结果:" + "" + result.getJsonRes());
