@@ -58,6 +58,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
     MaterialDialog dialog;
 
     String result2="";
+    String result3="";
 
 
     CropImageView cropImageView;
@@ -212,8 +213,8 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
             ocrResult=intent.getStringExtra("ocrResult");
             Bitmap bitmapten = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
             final List<Classifier.Recognition> results = classifier.recognizeImage(bitmapten);
-            result2="物体识别结果："+results.toString()+"\n";
-            ocrDialog.content(ocrResult+result2);
+            result2="\n物体识别结果："+results.toString()+"\n";
+            ocrDialog.content(ocrResult+"aaaaaaa");
             ocrDialog.show();
             //releaseAll();
         }
