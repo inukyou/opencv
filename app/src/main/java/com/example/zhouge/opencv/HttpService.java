@@ -72,6 +72,7 @@ public class HttpService extends IntentService {
 
     }
 
+
     private void sendMess()
     {
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);

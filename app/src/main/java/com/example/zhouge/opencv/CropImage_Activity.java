@@ -113,8 +113,8 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
                 .onPositive(new MaterialDialog.SingleButtonCallback() {
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                        Intent serviceIntent=new Intent(activity,HttpService.class);
-                        serviceIntent.putExtra("ocrResult",ocrResult);
+                        Intent serviceIntent=new Intent(activity,HttpService.class);//启动http后台服务
+                        serviceIntent.putExtra("ocrResult",ocrResult);//将ocrResult传
                         //serviceIntent.putExtra("imageMat",m.nativeObj);
                         dialog.show();
                         startService(serviceIntent);
@@ -214,7 +214,8 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
             Bitmap bitmapten = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
             final List<Classifier.Recognition> results = classifier.recognizeImage(bitmapten);
             result2="\n物体识别结果："+results.toString()+"\n";
-            ocrDialog.content(ocrResult+"aaaaaaa");
+            result3=result2;
+            ocrDialog.content(ocrResult+result3);
             ocrDialog.show();
             //releaseAll();
         }
@@ -231,7 +232,7 @@ public class CropImage_Activity extends opencvActivity implements View.OnClickLi
             if(HttpResult==null)
                 HttpResult="null";
 
-            httpDialog.adapter(new BookAdapter(bookList),new LinearLayoutManager(activity));
+            httpDialog.adapter(new BookAdapter(bookList,activity),new LinearLayoutManager(activity));
             dialog.cancel();
             dialog.dismiss();
             httpDialog.show();

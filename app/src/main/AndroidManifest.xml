@@ -6,8 +6,8 @@
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
-    <uses-permission android:name="android.permission.INTERNET"/>
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -43,7 +43,9 @@
             android:exported="false" />
         <service
             android:name=".HttpService"
-            android:exported="false"/>
+            android:exported="false" />
+
+        <activity android:name=".BookShowActivity"></activity>
     </application>
 
 </manifest>
